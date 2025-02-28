@@ -1,11 +1,8 @@
+
 import os
-from typing import Dict
-
 from fewsats.core import *
-from users import UserStore
-
-# Store payment context tokens mapped to user IDs
-PaymentContextStore: Dict[str, str] = {}
+from replit import db
+from users import get_user, save_user, User
 
 fewsats_api_key = os.getenv("FEWSATS_API_KEY")
 if not fewsats_api_key:
@@ -40,15 +37,14 @@ def create_payment_information(current_user_id):
     """
     Create L402 response for the available offers
     """
-    # Create the L402 response body with infomation about the offers and how to pay
+    # Create the L402 response body with information about the offers and how to pay
     offers_information = fs.create_offers(offers)
     offers_information.raise_for_status()
 
     # Store the payment context token with the user ID
     # So we can credit the user when they pay (we will receive a webhook from Fewsats)
-    payment_context_token = offers_information.json().get(
-        "payment_context_token")
-    PaymentContextStore[payment_context_token] = current_user_id
+    payment_context_token = offers_information.json().get("payment_context_token")
+    db[f"payment:{payment_context_token}"] = current_user_id
 
     return offers_information
 
@@ -65,7 +61,7 @@ def webhook(payload):
         }
 
     # Get the user ID associated with this payment context token
-    user_id = PaymentContextStore.get(payload.payment_context_token)
+    user_id = db.get(f"payment:{payload.payment_context_token}")
     if not user_id:
         return {
             "status": "error",
@@ -73,7 +69,7 @@ def webhook(payload):
         }
 
     # Get the user
-    user = UserStore.get(user_id)
+    user = get_user(user_id)
     if not user:
         return {"status": "error", "message": "User not found"}
 
@@ -88,7 +84,11 @@ def webhook(payload):
             "message": f"Unknown offer ID: {payload.offer_id}"
         }
 
+    # Save updated user
+    save_user(user)
+
     # Clean up the payment context token
-    PaymentContextStore.pop(payload.payment_context_token, None)
+    if f"payment:{payload.payment_context_token}" in db:
+        del db[f"payment:{payload.payment_context_token}"]
 
     return {"status": "success", "user_id": user_id, "credits": user.credits}

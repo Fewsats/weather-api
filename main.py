@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from payments import create_payment_information, webhook
 from weather_api import WeatherAPI
-from users import User, UserStore, get_current_user
+from users import User, get_current_user, save_user, get_user
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,7 +26,8 @@ def create_user():
     """Create a new user and return their UUID token"""
     user_id = str(uuid.uuid4())
     credits = 1
-    UserStore[user_id] = User(user_id=user_id, credits=credits)
+    user = User(user_id=user_id, credits=credits)
+    save_user(user)
     return {"user_id": user_id, "credits": credits}
 
 
@@ -73,7 +74,8 @@ async def get_weather(current_user: User = Depends(get_current_user),
 
     try:
         # Deduct a credit
-        UserStore[current_user.user_id].credits -= 1
+        current_user.credits -= 1
+        save_user(current_user)
 
         # Get weather data from the API
         weather_data = await weather_api.get_current_weather(location)
@@ -82,7 +84,8 @@ async def get_weather(current_user: User = Depends(get_current_user),
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         # Refund the credit since the request failed
-        UserStore[current_user.user_id].credits += 1
+        current_user.credits += 1
+        save_user(current_user)
         raise HTTPException(status_code=500,
                             detail=f"Failed to get weather data: {str(e)}")
 
