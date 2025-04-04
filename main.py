@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from payments import create_payment_information, webhook
 from weather_api import WeatherAPI
-from users import User, get_current_user, save_user, get_user
+from users import User, get_current_user, save_user
 
 # Load environment variables from .env file
 load_dotenv()

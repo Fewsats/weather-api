@@ -1,4 +1,3 @@
-
 import os
 from fewsats.core import *
 from replit import db
@@ -12,7 +11,7 @@ fs = Fewsats(api_key=fewsats_api_key)
 
 offers = [
     {
-        "offer_id": "offer_1",
+        "id": "offer_1",
         "title": "1 credit package",
         "description": "Add 1 credit to your account.",
         "amount": 1,  # Price in USD Cents
@@ -21,7 +20,7 @@ offers = [
         ["lightning"]  # Each offer can support different payment methods
     },
     {
-        "offer_id": "offer_2",
+        "id": "offer_2",
         "title": "1000 credit package",
         "description": "Add 1000 credits to your account.",
         "amount": 500,  # Price in USD Cents
@@ -43,7 +42,8 @@ def create_payment_information(current_user_id):
 
     # Store the payment context token with the user ID
     # So we can credit the user when they pay (we will receive a webhook from Fewsats)
-    payment_context_token = offers_information.json().get("payment_context_token")
+    payment_context_token = offers_information.json().get(
+        "payment_context_token")
     db[f"payment:{payment_context_token}"] = current_user_id
 
     return offers_information
@@ -54,7 +54,7 @@ def webhook(payload):
     Webhook for Fewsats payment events
     """
     # Verify payment status
-    if payload.status != "completed":
+    if payload.status != "success":
         return {
             "status": "error",
             "message": f"Payment status is {payload.status}, not completed"
