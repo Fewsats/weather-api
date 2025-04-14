@@ -4,6 +4,8 @@ This repository demonstrates how to implement an API paywall using the [L402 pro
 
 We use a simple Weather API as a practical example, which is publicly available at https://weather.l402.org.
 
+This project runs on Replit and you can fork and run it yourself directly from your browser [here](https://replit.com/t/fewsats/repls/l402weatherapi/view#main.py)
+
 This project serves as both a showcase of L402 capabilities and an example for developers looking to monetize their own APIs programmatically using Fewsats.
 
 ## Why L402?
